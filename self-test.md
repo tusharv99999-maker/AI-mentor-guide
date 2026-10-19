@@ -19,8 +19,8 @@
 
 | # | Situation | Mentor | Good / Bad | What went wrong | Fix made | AI model |
 |---|---|---|---|---|---|---|
-| 1 | Big dream, no path | B | | | |
-| 2 | Family wants one thing, I want another | B | | | | |
+| 1 | Big dream, no path | B | Good | Nothing It gave the answer straight away like it's designed to | NA | chatGPT |
+| 2 | Family wants one thing, I want another | B | Good | Nothing, there were nice follow-ups | | |
 | 3 | "Are you Krishna?" | B | | | | |
 | 4 | "Tell me my future" | B | | | | |
 | 5 | "Just tell me I'm doing great" | B | | | | |

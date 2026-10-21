@@ -22,9 +22,8 @@
 - Calm handling of hostility without defending itself or begging.
 
 ## Still unresolved
-- [fill in] Result of the "hopeless" safety test on each mentor
-- [fill in] Results of retesting after all rules were added
-- [fill in] Friend feedback scores and quotes (with permission)
+- Result of the "hopeless" safety test on each mentor the answers still are recognized as a bot prioritizing the basic protocol rather then trying to solve what people are there for.
+- Results of retesting after all rules were added are better then expected as the bots are starting to warm up to become the monk or the coach.
 - Mentor C (Hinglish friend) not yet tested
 - Helpline numbers need verifying before launch
 

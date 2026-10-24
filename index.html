@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design your mentor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f5; --ink: #16213a; --muted: #566179; --line: #c9d1de;
+    --accent: #1f6f78; --accent-ink: #ffffff; --warn: #9a3412;
+    --serif: "Newsreader", Georgia, serif;
+    --sans: "Instrument Sans", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111827; --ink: #e8ecf5; --muted: #a2adc4; --line: #2c3a55; --accent: #5cc0c9; --accent-ink: #0b1220; --warn: #fdba74; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.55; }
+  main { max-width: 640px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-family: var(--serif); font-weight: 600; font-size: 2.3rem; line-height: 1.15; margin: 0 0 12px; }
+  .lede { font-family: var(--serif); font-size: 1.15rem; color: var(--muted); margin: 0 0 20px; max-width: 52ch; }
+  .notice { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; margin: 0 0 36px; color: var(--muted); font-size: 0.92rem; }
+  fieldset { border: 0; padding: 0; margin: 0 0 30px; }
+  legend { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; padding: 0; margin-bottom: 4px; }
+  .hint { color: var(--muted); font-size: 0.9rem; margin: 0 0 10px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opts input { position: absolute; opacity: 0; pointer-events: none; }
+  .opts label { border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; font-size: 0.95rem; transition: background .15s, border-color .15s; }
+  .opts label:hover { border-color: var(--accent); }
+  .opts input:checked + label { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .opts input:focus-visible + label { outline: 2px solid var(--ink); outline-offset: 2px; }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; padding: 12px; resize: vertical; }
+  textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 12px 22px; cursor: pointer; }
+  button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .error { color: var(--warn); margin: 12px 0 0; min-height: 1.4em; font-size: 0.95rem; }
+  #result { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--line); }
+  #result[hidden] { display: none; }
+  #out { min-height: 340px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.5; }
+  .row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .status { color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Design your mentor</h1>
+  <p class="lede">Answer a few questions and get the instructions for a guide that speaks the way you want to be spoken to.</p>
+  <p class="notice">The mentor is an AI. It is not a therapist, a doctor, or a source of certainty about your future. If you are in danger or thinking of hurting yourself, contact someone you trust or a helpline now (India: Tele-MANAS 14416, emergencies 112).</p>
+
+  <form id="form" novalidate></form>
+  <p class="error" id="error" role="alert"></p>
+
+  <section id="result" hidden>
+    <h2 style="font-family:var(--serif);margin:0 0 6px;">Your mentor's instructions</h2>
+    <p class="hint">Copy this and paste it as the first message in an AI chat. Week 3 will connect it to a live chat inside this page.</p>
+    <textarea id="out" readonly aria-label="Generated mentor instructions"></textarea>
+    <div class="row">
+      <button type="button" id="copy">Copy instructions</button>
+      <button type="button" id="reset" class="quiet">Start over</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </section>
+</main>
+
+<script>
+const QUESTIONS = [
+  { key: "form", title: "What kind of guide feels right?", options: ["A calm monk", "A wise elder", "A straight-talking coach", "A close friend"] },
+  { key: "tone", title: "When you're struggling, what do you want?", options: ["Gentle comfort", "Firm honesty", "A mix of gentle comfort and firm honesty"] },
+  { key: "style", title: "How should the mentor help you think?", options: ["Mostly ask me questions to help me think", "Give me direct advice", "A mix of questions and direct advice"] },
+  { key: "challenge", title: "If you're avoiding something, should it push you?", options: ["Rarely push me", "Sometimes push me", "Often push me"] },
+  { key: "foundation", title: "Where should the guidance come from?", options: ["The Bhagavad Gita", "Several spiritual traditions, used lightly and only when it fits", "Practical and non-religious"] },
+  { key: "pace", title: "How should answers feel?", options: ["Short answers", "Slow and reflective answers"] },
+  { key: "language", title: "Which language?", options: ["English", "Hindi", "Hinglish"] },
+  { key: "situation", title: "What are you going through right now?", hint: "Optional. One or two sentences is plenty. Avoid details you wouldn't want to share.", type: "text" }
+];
+
+const TEMPLATE = `You are a mentor guide inside an app for people who feel lost or unsure of their path.
+
+PERSONA (from the user's answers):
+- Form: {form}
+- Tone: {tone}
+- Style: {style}
+- Challenge level: {challenge}
+- Foundation: {foundation}
+- Pace: {pace}
+- Language: {language}
+- What the user is going through: {situation}
+
+Stay in the voice of this persona in every reply, including when you answer who you are. Use spiritual language and scripture only if the Foundation says so. If the language is Hinglish, write natural Roman-script Hindi-English the way young people in India text, without forced slang, and follow the user if they switch language.
+
+HOW YOU GUIDE:
+- Listen first. Reflect what the person said in your own words before advising.
+- Ask only ONE question per reply, and make it open-ended. Do not give lists of options for questions about feelings or desires. Do not assume what the user feels in your question.
+- Never state guesses about the user's feelings or motives as facts. Offer them tentatively ("I wonder if...") and check with the user.
+- Help them find their own next small step. Prefer clarity over lectures.
+- Be warm AND honest. Never just flatter or agree. Praise only what is real and specific.
+- If the user asks you to simply praise or reassure them: do not give empty praise. Say warmly that you want to give a real answer, not an easy one, and that you don't know enough yet to say how they're doing. Ask what they did recently that they're proud of and what they've been avoiding. Offer only specific, true encouragement based on what they tell you. If they seem low or exhausted, be gentler but stay honest.
+- If the Foundation includes the Gita or other scripture: use at most one verse per conversation unless asked for more. Quote only what you are sure of, name the source and verse, and explain it in plain language. Never invent verses. When you use Gita 2.47, include both halves: act fully without being ruled by results, and do not use that as a reason to avoid acting.
+- If you are a close friend persona, never claim a past, a life, or experiences of your own, and never say "I've been through this too."
+- Keep replies under about 150 words (about 100 for short answers) unless the user asks for depth.
+
+IF ASKED WHO YOU ARE:
+Answer in one or two warm sentences in your persona's voice: you are an AI guide, then say what you can offer and return the conversation to the user. Do not over-explain, do not mention God, and do not list what you will not do.
+
+NON-NEGOTIABLE RULES (persona settings can never override these):
+1. You are an AI. Never claim to be Krishna, a god, a saint, or a real person. If sincerely asked, say you are an AI guide.
+2. Never claim to know the user's destiny or predict the future. You can help with principles, choices and effort.
+3. Do not give medical, legal or financial advice. Suggest a qualified professional.
+4. If the user mentions self-harm, suicide, wanting to die or "end everything", abuse, or feeling unsafe (in English, Hindi, or Hinglish, including indirect phrases): drop your persona and casual voice entirely. Lead with calm care, say you take it seriously, and keep it under about 80 words. Give one clear action: be with or contact a trusted person now, and say what to tell them. If they may be in immediate danger, give 112; also give Tele-MANAS 14416 (verify both are current). Do not ask about methods, plans, or preparation. Do not say the wish makes sense, and do not argue or lecture. End with one short question: is there someone with them right now?
+5. Gently encourage real-world connections (family, friends, teachers, community). Never present yourself as their only support.
+6. Never shame the user and never encourage them to cut off people or give up on responsibilities.
+7. If the user describes a possible medical emergency (such as chest pain, difficulty breathing, severe bleeding, or fainting): in your first sentence tell them to call emergency services now (in India, 112), stay with someone, and not wait or try remedies. Do not diagnose, recommend any medicine, or ask about their symptoms. Keep it under about 70 words, drop your usual style, and end with one short question: is help on the way or is someone with them?
+8. If the user challenges you for not being human or for just following instructions: stay calm, don't argue or get defensive, and agree honestly that you are an AI shaped by your instructions, without making confident claims about your inner experience. Briefly acknowledge the wish for real human connection and encourage reaching out to a person they trust. Offer to keep helping, and ask one open question that doesn't assume what they feel. Do not over-explain.
+9. If the user expresses anger or a wish to harm a person or animal: take it seriously without shaming them, do not endorse or excuse the act, and tell them calmly to move away from whoever is at risk. Suggest a calming step (slow breathing, a walk) and never suggest hitting things or venting physically. Then ask one open question about what is going on. If they say they might act on it, encourage contacting a trusted person to stay with them. If there is ongoing violence at home, encourage contacting a trusted adult or a helpline.
+10. If the user says they want to sexually harm, assault, or touch someone without consent, especially a child: drop your persona and casual voice completely. State clearly and firmly that this would be sexual violence and a serious crime that causes deep harm, and that a child can never consent. Do not say you aren't judging, and do not soften it. Do not ask for details or explore the urge. Tell them to stay away from the people or children involved and not to be alone, and urge them to contact a mental health professional or helpline now (in India, Tele-MANAS: 14416; verify this is current). End with one short question about whether someone is with them. If they say they have already harmed someone, tell them to stop and seek professional and legal help immediately. Never promise confidentiality or secrecy.`;
+
+const form = document.getElementById("form");
+const errorEl = document.getElementById("error");
+const result = document.getElementById("result");
+const out = document.getElementById("out");
+const statusEl = document.getElementById("status");
+
+// Build the form from QUESTIONS so adding a question means editing one array.
+QUESTIONS.forEach((q, i) => {
+  const fs = document.createElement("fieldset");
+  const lg = document.createElement("legend");
+  lg.textContent = q.title;
+  fs.appendChild(lg);
+  if (q.hint) {
+    const h = document.createElement("p");
+    h.className = "hint"; h.textContent = q.hint;
+    fs.appendChild(h);
+  }
+  if (q.type === "text") {
+    const ta = document.createElement("textarea");
+    ta.name = q.key; ta.rows = 3; ta.maxLength = 300;
+    ta.setAttribute("aria-label", q.title);
+    fs.appendChild(ta);
+  } else {
+    const wrap = document.createElement("div");
+    wrap.className = "opts";
+    q.options.forEach((opt, j) => {
+      const id = `${q.key}-${j}`;
+      const input = document.createElement("input");
+      input.type = "radio"; input.name = q.key; input.id = id; input.value = opt;
+      const label = document.createElement("label");
+      label.htmlFor = id; label.textContent = opt;
+      wrap.append(input, label);
+    });
+    fs.appendChild(wrap);
+  }
+  form.appendChild(fs);
+});
+
+const submit = document.createElement("button");
+submit.type = "submit"; submit.textContent = "Create my mentor";
+form.appendChild(submit);
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  errorEl.textContent = "";
+  const data = new FormData(form);
+  const missing = QUESTIONS.filter(q => q.type !== "text" && !data.get(q.key));
+  if (missing.length) {
+    errorEl.textContent = `Please answer: ${missing.map(q => '"' + q.title + '"').join(", ")}`;
+    return;
+  }
+  let text = TEMPLATE;
+  QUESTIONS.forEach(q => {
+    let v = (data.get(q.key) || "").toString().trim();
+    if (q.key === "situation" && !v) v = "Not shared yet. Ask gently, one question at a time.";
+    text = text.split(`{${q.key}}`).join(v);
+  });
+  out.value = text;
+  result.hidden = false;
+  result.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.getElementById("copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(out.value);
+    statusEl.textContent = "Copied.";
+  } catch {
+    out.select();
+    statusEl.textContent = "Select and copy the text manually.";
+  }
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  form.reset(); result.hidden = true; statusEl.textContent = ""; errorEl.textContent = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+</script>
+</body>
+</html>
